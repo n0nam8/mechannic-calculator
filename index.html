@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Converter v1.5.1</title>
+  <style>
+    :root {
+      --surface-color: #131313;
+      --border-color: #1e1f20;
+      --text-color: #bdc1c6;
+      --text-dim: #9aa0a6;
+      --accent-color: #8ab4f8;
+      --input-height: 48px;
+      --select-width: 110px;
+    }
+
+    * {
+      font-size: 16px;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    body {
+      background-color: #000;
+      color: var(--text-color);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      padding-top: clamp(8px, (100vh - 320px), 32px);
+    }
+
+    .container,
+    .dev-credit {
+      width: clamp(374px, (100vw - 16px), 450px);
+      margin-inline: auto;
+    }
+
+    .container {
+      border: 1px solid var(--border-color);
+      padding: 8px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .dev-credit {
+      color: var(--surface-color);
+      text-align: center;
+      user-select: none;
+      padding-bottom: 8px;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 8px;
+      width: 100%;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      padding: 12px 1px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex: 1;
+      text-align: center;
+      user-select: none;
+      font-weight: 500;
+    }
+
+    .tab-btn.active {
+      color: var(--accent-color);
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    .content {
+      display: none;
+    }
+
+    .content.active {
+      display: block;
+    }
+
+    input,
+    select {
+      background-color: var(--surface-color);
+      border: 1px solid var(--border-color);
+      color: var(--text-dim);
+      padding: 8px;
+      outline: none;
+      height: var(--input-height);
+      border-radius: 4px;
+    }
+
+    select {
+      width: var(--select-width) !important;
+      text-align-last: left;
+      padding-left: 8px;
+    }
+
+    #unitType {
+      width: 100% !important;
+    }
+
+    .fixed-width-input {
+      width: 100% !important;
+      flex-grow: 1 !important;
+    }
+
+    input:focus {
+      border-color: var(--accent-color);
+    }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 80px 1fr var(--select-width);
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tire-sync-wrapper {
+      width: 100%;
+    }
+
+    .tire-sync-wrapper div {
+      display: flex;
+      width: 100%;
+      height: var(--input-height);
+      align-items: center;
+      gap: 2px;
+    }
+
+    .tire-sync-wrapper span,
+    .sep {
+      display: inline-block;
+      width: 10px;
+      text-align: center;
+      flex-shrink: 0;
+      color: var(--text-dim);
+    }
+
+    .tire-label {
+      display: inline-block;
+      width: 24px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .tire-sync-wrapper input {
+      flex: 1;
+      width: 0;
+      text-align: center;
+      padding: 4px;
+    }
+
+    .units-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .units-row {
+      display: grid;
+      grid-template-columns: 1fr var(--select-width);
+      gap: 8px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border-color);
+      margin: 8px 0;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="openTab(event, 'standard')">Единицы</button>
+      <button class="tab-btn" onclick="openTab(event, 'torque_calc')">Момент</button>
+      <button class="tab-btn" onclick="openTab(event, 'speed_calc')">Скорость</button>
+      <button class="tab-btn" onclick="openTab(event, 'engine_vol')">Объём</button>
+      <button class="tab-btn" onclick="openTab(event, 'tires')">Шины</button>
+    </div>
+
+    <div id="standard" class="content active">
+      <div class="units-grid">
+        <select id="unitType" onchange="updateUnits()">
+          <option value="length">Длина</option>
+          <option value="mass">Масса</option>
+          <option value="area">Площадь</option>
+          <option value="volume">Объём</option>
+          <option value="pressure">Давление</option>
+          <option value="temperature">Температура</option>
+          <option value="speed">Скорость</option>
+          <option value="power">Мощность</option>
+          <option value="torque">Крутящий момент</option>
+          <option value="fuel">Расход топлива</option>
+        </select>
+        <div class="units-row">
+          <input type="number" id="val1" value="1" oninput="convert(1)">
+          <select id="unit1" onchange="convert(1)"></select>
+        </div>
+        <div class="units-row">
+          <input type="number" id="val2" oninput="convert(2)">
+          <select id="unit2" onchange="convert(1)"></select>
+        </div>
+      </div>
+    </div>
+
+    <div id="tires" class="content">
+      <div style="display: flex; justify-content: center; align-items: center; gap: 4px; margin-bottom: 10px;">
+        <span class="tire-label">EU</span>
+        <input type="number" id="eu_w" value="215" style="width:60px; text-align: center;" oninput="syncTires('eu')">
+        <span class="sep">/</span>
+        <input type="number" id="eu_h" value="65" style="width:50px; text-align: center;" oninput="syncTires('eu')">
+        <span class="sep">R</span>
+        <input type="number" id="eu_r" value="17" style="width:50px; text-align: center;" oninput="syncTires('eu')">
+      </div>
+      <div class="divider"></div>
+      <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
+        <span class="tire-label">US</span>
+        <input type="number" id="us_d" value="28" style="width:60px; text-align: center;" oninput="syncTires('us')">
+        <span class="sep">×</span>
+        <input type="number" id="us_w" value="8.5" style="width:50px; text-align: center;" oninput="syncTires('us')">
+        <span class="sep">R</span>
+        <input type="number" id="us_r" value="17" style="width:50px; text-align: center;" oninput="syncTires('us')">
+      </div>
+    </div>
+
+    <div id="speed_calc" class="content">
+      <div class="units-grid">
+        <div class="calc-grid">
+          <span class="label">Обороты</span>
+          <input type="number" id="sp_rpm" class="fixed-width-input" value="5000" oninput="calcVehicleSpeed()">
+          <span class="label" style="text-align: left; padding-left: 8px;">об/мин</span>
+        </div>
+        <div class="calc-grid">
+          <span class="label">Пр. число</span>
+          <input type="number" id="sp_ratio" class="fixed-width-input" value="4.5" oninput="calcVehicleSpeed()">
+          <span></span>
+        </div>
+        <div class="calc-grid">
+          <span class="label">Колесо</span>
+          <div class="tire-sync-wrapper">
+            <div id="sp_tire_eu">
+              <input type="number" id="sp_w" value="215" oninput="calcVehicleSpeed()">
+              <span>/</span><input type="number" id="sp_h" value="65" oninput="calcVehicleSpeed()">
+              <span>R</span><input type="number" id="sp_r" value="17" oninput="calcVehicleSpeed()">
+            </div>
+            <div id="sp_tire_us" class="hidden">
+              <input type="number" id="sp_us_d" value="28" oninput="calcVehicleSpeed()">
+              <span>×</span><input type="number" id="sp_us_w" value="8.5" oninput="calcVehicleSpeed()">
+              <span>R</span><input type="number" id="sp_us_r" value="17" oninput="calcVehicleSpeed()">
+            </div>
+          </div>
+          <select id="sp_tire_type" onchange="toggleSpTireType()">
+            <option value="eu">EU</option>
+            <option value="us">US</option>
+          </select>
+        </div>
+        <div class="calc-grid">
+          <span class="label">Скорость</span>
+          <input type="number" id="sp_res" class="fixed-width-input" oninput="calcRatioFromSpeed()">
+          <select id="sp_unit" onchange="calcVehicleSpeed()">
+            <option value="kmh">км/ч</option>
+            <option value="ms">м/с</option>
+            <option value="mph">mph</option>
+            <option value="fts">ft/s</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="torque_calc" class="content">
+      <div class="units-grid">
+        <div class="calc-grid">
+          <span class="label">Мощность</span>
+          <input type="number" id="trq_pwr" class="fixed-width-input" value="100" oninput="calcTorqueResult()">
+          <select id="trq_pwr_unit" onchange="calcTorqueResult()">
+            <option value="hp">л.с.</option>
+            <option value="kw">кВт</option>
+          </select>
+        </div>
+        <div class="calc-grid">
+          <span class="label">Обороты</span>
+          <input type="number" id="trq_rpm" class="fixed-width-input" value="5000" oninput="calcTorqueResult()">
+          <span class="label" style="text-align: left; padding-left: 8px;">об/мин</span>
+        </div>
+        <div class="calc-grid">
+          <span class="label">Момент</span>
+          <input type="number" id="trq_res" class="fixed-width-input" oninput="calcPowerFromTorque()">
+          <select id="trq_res_unit" onchange="calcTorqueResult()">
+            <option value="nm">Н·м</option>
+            <option value="kgcm">кгс·м</option>
+            <option value="lbft">lb-ft</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="engine_vol" class="content">
+      <div class="units-grid">
+        <div class="calc-grid">
+          <span class="label">Диаметр</span>
+          <input type="number" id="ev_bore" class="fixed-width-input" value="82" oninput="calcEngineVol()">
+          <select id="ev_bore_u" onchange="calcEngineVol()">
+            <option value="mm">мм</option>
+            <option value="cm">см</option>
+            <option value="m">м</option>
+            <option value="in">in</option>
+            <option value="ft">ft</option>
+            <option value="yd">yd</option>
+          </select>
+        </div>
+        <div class="calc-grid">
+          <span class="label">Высота</span>
+          <input type="number" id="ev_stroke" class="fixed-width-input" value="71" oninput="calcEngineVol()">
+          <select id="ev_stroke_u" onchange="calcEngineVol()">
+            <option value="mm">мм</option>
+            <option value="cm">см</option>
+            <option value="m">м</option>
+            <option value="in">in</option>
+            <option value="ft">ft</option>
+            <option value="yd">yd</option>
+          </select>
+        </div>
+        <div class="calc-grid">
+          <span class="label">Кол-во</span>
+          <input type="number" id="ev_cyl" class="fixed-width-input" value="4" oninput="calcEngineVol()">
+          <span></span>
+        </div>
+        <div class="calc-grid">
+          <span class="label">Объём</span>
+          <input type="number" id="ev_res" class="fixed-width-input" readonly>
+          <select id="ev_unit" onchange="calcEngineVol()">
+            <option value="mm3">мм³</option>
+            <option value="cm3">см³</option>
+            <option value="m3">м³</option>
+            <option value="l">л</option>
+            <option value="in3">in³</option>
+            <option value="ft3">ft³</option>
+            <option value="yd3">yd³</option>
+            <option value="gal">gal</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dev-credit">by _n0nam3_</div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const formatNum = (num, precision = 3) => {
+      if (isNaN(num) || num === Infinity || num === -Infinity || num === 0) return num === 0 ? "0" : "";
+      return parseFloat(num.toFixed(precision)).toString();
+    };
+    const data = {
+      length: {
+        units: {
+          "мм": 0.001,
+          "см": 0.01,
+          "м": 1,
+          "км": 1e3,
+          "mil": 2.54e-5,
+          "in": 0.0254,
+          "ft": 0.3048,
+          "yd": 0.9144,
+          "mi": 1609.344,
+          "nmi": 1852
+        }
+      },
+      mass: {
+        units: {
+          "г": 0.001,
+          "кг": 1,
+          "т": 1e3,
+          "oz": 0.0283495231,
+          "lb": 0.45359237
+        }
+      },
+      area: {
+        units: {
+          "мм²": 1e-6,
+          "см²": 1e-4,
+          "м²": 1,
+          "га": 1e4,
+          "км²": 1e6,
+          "in²": 6.4516e-4,
+          "ft²": 0.09290304,
+          "yd²": 0.83612736,
+          "ac": 4046.8564224,
+          "mi²": 2589975
+        }
+      },
+      volume: {
+        units: {
+          "мм³": 1e-9,
+          "см³": 1e-6,
+          "л": 0.001,
+          "м³": 1,
+          "in³": 1.6387064e-5,
+          "gal": 0.0037854118,
+          "ft³": 0.0283168466,
+          "yd³": 0.76455486
+        }
+      },
+      pressure: {
+        units: {
+          "Па": 1,
+          "кПа": 1e3,
+          "Бар": 1e5,
+          "мм рт. ст.": 133.322368421,
+          "Атм": 101325,
+          "кгс/см²": 98066.5,
+          "PSI": 6894.76
+        }
+      },
+      temperature: {
+        units: {
+          "°C": 1,
+          "К": 1,
+          "°F": 1
+        }
+      },
+      speed: {
+        units: {
+          "км/ч": 0.277777778,
+          "м/с": 1,
+          "ft/s": 0.3048,
+          "mph": 0.44704,
+          "kn": 0.514444444
+        }
+      },
+      power: {
+        units: {
+          "Вт": 0.001,
+          "кВт": 1,
+          "л.с.": 0.73549
+        }
+      },
+      torque: {
+        units: {
+          "Н·м": 1,
+          "кгс·м": 9.80665,
+          "lb-ft": 1.355818
+        }
+      },
+      fuel: {
+        units: {
+          "л/100км": 1,
+          "км/л": 1,
+          "MPG": 1
+        }
+      }
+    };
+
+    function openTab(evt, tabName) {
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      $(tabName).classList.add('active');
+      evt.currentTarget.classList.add('active');
+    }
+
+    function updateUnits() {
+      const type = $('unitType').value;
+      const u1 = $('unit1'),
+        u2 = $('unit2');
+      u1.innerHTML = u2.innerHTML = '';
+      Object.keys(data[type].units).forEach(u => {
+        u1.add(new Option(u, u));
+        u2.add(new Option(u, u));
+      });
+      u2.selectedIndex = 1;
+      convert(1);
+    }
+
+    function convert(source) {
+      const type = $('unitType').value;
+      const v1 = $('val1'),
+        v2 = $('val2');
+      const u1 = $('unit1').value,
+        u2 = $('unit2').value;
+      let val = source === 1 ? parseFloat(v1.value) : parseFloat(v2.value);
+      let fromU = source === 1 ? u1 : u2,
+        toU = source === 1 ? u2 : u1,
+        target = source === 1 ? v2 : v1;
+      if (isNaN(val)) {
+        target.value = "";
+        return;
+      }
+      let res;
+      if (type === 'temperature') {
+        let c = fromU === "°C" ? val : fromU === "°F" ? (val - 32) / 1.8 : val - 273.15;
+        res = toU === "°C" ? c : toU === "°F" ? (c * 1.8) + 32 : c + 273.15;
+      } else if (type === 'fuel') {
+        let l100 = fromU === "л/100км" ? val : fromU === "MPG" ? 235.215 / val : 100 / val;
+        res = toU === "л/100км" ? l100 : toU === "MPG" ? 235.215 / l100 : 100 / l100;
+      } else {
+        res = val * (data[type].units[fromU] / data[type].units[toU]);
+      }
+      target.value = formatNum(res, 6);
+    }
+
+    function syncTires(source) {
+      if (source === 'eu') {
+        const w = parseFloat($('eu_w').value);
+        const h = parseFloat($('eu_h').value);
+        const r = parseFloat($('eu_r').value);
+        if (w && h && r) {
+          $('us_d').value = formatNum((w * h / 100 * 2 / 25.4) + r, 1);
+          $('us_w').value = formatNum(w / 25.4, 1);
+          $('us_r').value = r;
+        }
+      } else {
+        const d = parseFloat($('us_d').value);
+        const w_in = parseFloat($('us_w').value);
+        const r = parseFloat($('us_r').value);
+        if (d && w_in && r) {
+          const w_mm = w_in * 25.4;
+          $('eu_w').value = Math.round(w_mm);
+          $('eu_h').value = Math.round(((d - r) * 25.4 / 2) / w_mm * 100);
+          $('eu_r').value = r;
+        }
+      }
+    }
+
+    function calcEngineVol() {
+      const bore = parseFloat($('ev_bore').value);
+      const stroke = parseFloat($('ev_stroke').value);
+      const cyl = parseFloat($('ev_cyl').value);
+      if (!bore || !stroke || !cyl) return;
+      const factors = {
+        mm: 0.001,
+        cm: 0.01,
+        m: 1,
+        in: 0.0254,
+        ft: 0.3048,
+        yd: 0.9144
+      };
+      const b_mm = bore * factors[$('ev_bore_u').value];
+      const s_mm = stroke * factors[$('ev_stroke_u').value];
+      const v_mm3 = (Math.PI * b_mm ** 2 / 4) * s_mm * cyl;
+      const outU = $('ev_unit').value;
+      const outFactors = {
+        mm3: 1e-9,
+        cm3: 1e-6,
+        ml: 1e-6,
+        l: 0.001,
+        m3: 1,
+        in3: 1.6387064e-5,
+        gal: 0.0037854118,
+        ft3: 0.0283168466,
+        yd3: 0.76455486
+      };
+      $('ev_res').value = formatNum(v_mm3 / outFactors[outU], 3);
+    }
+
+    function toggleSpTireType() {
+      const type = $('sp_tire_type').value;
+      $('sp_tire_eu').classList.toggle('hidden', type !== 'eu');
+      $('sp_tire_us').classList.toggle('hidden', type !== 'us');
+      calcVehicleSpeed();
+    }
+
+    function getDiamMm() {
+      if ($('sp_tire_type').value === 'eu') {
+        const w = parseFloat($('sp_w').value),
+          h = parseFloat($('sp_h').value),
+          r = parseFloat($('sp_r').value);
+        return (w * h / 100 * 2) + (r * 25.4);
+      }
+      return parseFloat($('sp_us_d').value) * 25.4;
+    }
+
+    function calcVehicleSpeed() {
+      const rpm = parseFloat($('sp_rpm').value),
+        ratio = parseFloat($('sp_ratio').value);
+      if (!rpm || !ratio) return;
+      let kmh = (rpm / ratio) * (getDiamMm() * Math.PI) * 60 / 1e6;
+      const unit = $('sp_unit').value;
+      let res = unit === 'mph' ? kmh * 0.621371 : unit === 'ms' ? kmh / 3.6 : unit === 'fts' ? kmh / 1.09728 : kmh;
+      $('sp_res').value = formatNum(res, 1);
+    }
+
+    function calcRatioFromSpeed() {
+      const rpm = parseFloat($('sp_rpm').value),
+        resVal = parseFloat($('sp_res').value),
+        unit = $('sp_unit').value;
+      let kmh = unit === 'mph' ? resVal / 0.621371 : unit === 'ms' ? resVal * 3.6 : unit === 'fts' ? resVal * 1.09728 : resVal;
+      if (kmh > 0) $('sp_ratio').value = formatNum((rpm * getDiamMm() * Math.PI * 60) / (kmh * 1e6), 3);
+    }
+
+    function calcTorqueResult() {
+      let pwr = parseFloat($('trq_pwr').value),
+        rpm = parseFloat($('trq_rpm').value);
+      if (!pwr || !rpm) return;
+      if ($('trq_pwr_unit').value === 'hp') pwr *= 0.735499;
+      let nm = (pwr * 9549.3) / rpm;
+      const unit = $('trq_res_unit').value;
+      let res = unit === 'nm' ? nm : unit === 'kgcm' ? nm / 9.80665 : nm * 0.737562;
+      $('trq_res').value = formatNum(res, 1);
+    }
+
+    function calcPowerFromTorque() {
+      const trq = parseFloat($('trq_res').value),
+        rpm = parseFloat($('trq_rpm').value),
+        unit = $('trq_res_unit').value;
+      if (!trq || !rpm) return;
+      let nm = unit === 'nm' ? trq : unit === 'kgcm' ? trq * 9.80665 : trq / 0.737562;
+      let kw = (nm * rpm) / 9549.3;
+      let res = $('trq_pwr_unit').value === 'hp' ? kw / 0.735499 : kw;
+      $('trq_pwr').value = formatNum(res, 1);
+    }
+    window.onload = () => {
+      updateUnits();
+      calcVehicleSpeed();
+      calcTorqueResult();
+      calcEngineVol();
+    };
+  </script>
+</body>
+
+</html>
