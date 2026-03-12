@@ -4,9 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta property="og:title" content="Converter v1.5.1">
-  <title>Converter v1.5.1</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
+  <title>Converter v1.5.2</title>
   <style>
     :root {
       --surface-color: #131313;
@@ -300,6 +298,7 @@
           <select id="trq_pwr_unit" onchange="calcTorqueResult()">
             <option value="hp">л.с.</option>
             <option value="kw">кВт</option>
+            <option value="w">Вт</option>
           </select>
         </div>
         <div class="calc-grid">
@@ -411,7 +410,7 @@
           "ft²": 0.09290304,
           "yd²": 0.83612736,
           "ac": 4046.8564224,
-          "mi²": 2589975
+          "mi²": 2589988.11
         }
       },
       volume: {
@@ -434,7 +433,7 @@
           "мм рт. ст.": 133.322368421,
           "Атм": 101325,
           "кгс/см²": 98066.5,
-          "PSI": 6894.76
+          "PSI": 6894.757293178
         }
       },
       temperature: {
@@ -492,7 +491,22 @@
         u1.add(new Option(u, u));
         u2.add(new Option(u, u));
       });
-      u2.selectedIndex = 1;
+      const defaults = {
+        length: ['см', 'in'],
+        mass: ['кг', 'lb'],
+        area: ['м²', 'ft²'],
+        volume: ['л', 'gal'],
+        pressure: ['Бар', 'PSI'],
+        speed: ['км/ч', 'mph'],
+        power: ['кВт', 'л.с.'],
+        torque: ['Н·м', 'lb-ft']
+      };
+      if (defaults[type]) {
+        u1.value = defaults[type][0];
+        u2.value = defaults[type][1];
+      } else {
+        u2.selectedIndex = 1;
+      }
       convert(1);
     }
 
@@ -559,14 +573,13 @@
         ft: 0.3048,
         yd: 0.9144
       };
-      const b_mm = bore * factors[$('ev_bore_u').value];
-      const s_mm = stroke * factors[$('ev_stroke_u').value];
-      const v_mm3 = (Math.PI * b_mm ** 2 / 4) * s_mm * cyl;
+      const b_m = bore * factors[$('ev_bore_u').value];
+      const s_m = stroke * factors[$('ev_stroke_u').value];
+      const v_m3 = (Math.PI * b_m ** 2 / 4) * s_m * cyl;
       const outU = $('ev_unit').value;
       const outFactors = {
         mm3: 1e-9,
         cm3: 1e-6,
-        ml: 1e-6,
         l: 0.001,
         m3: 1,
         in3: 1.6387064e-5,
@@ -574,7 +587,7 @@
         ft3: 0.0283168466,
         yd3: 0.76455486
       };
-      $('ev_res').value = formatNum(v_mm3 / outFactors[outU], 3);
+      $('ev_res').value = formatNum(v_m3 / outFactors[outU], 3);
     }
 
     function toggleSpTireType() {
@@ -616,7 +629,9 @@
       let pwr = parseFloat($('trq_pwr').value),
         rpm = parseFloat($('trq_rpm').value);
       if (!pwr || !rpm) return;
-      if ($('trq_pwr_unit').value === 'hp') pwr *= 0.735499;
+      const pUnit = $('trq_pwr_unit').value;
+      if (pUnit === 'hp') pwr *= 0.735499;
+      else if (pUnit === 'w') pwr /= 1000;
       let nm = (pwr * 9549.3) / rpm;
       const unit = $('trq_res_unit').value;
       let res = unit === 'nm' ? nm : unit === 'kgcm' ? nm / 9.80665 : nm * 0.737562;
@@ -630,10 +645,12 @@
       if (!trq || !rpm) return;
       let nm = unit === 'nm' ? trq : unit === 'kgcm' ? trq * 9.80665 : trq / 0.737562;
       let kw = (nm * rpm) / 9549.3;
-      let res = $('trq_pwr_unit').value === 'hp' ? kw / 0.735499 : kw;
+      const pUnit = $('trq_pwr_unit').value;
+      let res = pUnit === 'hp' ? kw / 0.735499 : (pUnit === 'w' ? kw * 1000 : kw);
       $('trq_pwr').value = formatNum(res, 1);
     }
     window.onload = () => {
+      $('ev_unit').value = 'cm3';
       updateUnits();
       calcVehicleSpeed();
       calcTorqueResult();
