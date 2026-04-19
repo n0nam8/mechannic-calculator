@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Converter v1.5.2</title>
+  <title>Converter v1.5.3</title>
   <style>
     :root {
       --surface-color: #131313;
@@ -208,6 +208,7 @@
           <option value="mass">Масса</option>
           <option value="area">Площадь</option>
           <option value="volume">Объём</option>
+		  <option value="time">Время</option>
           <option value="pressure">Давление</option>
           <option value="temperature">Температура</option>
           <option value="speed">Скорость</option>
@@ -311,7 +312,7 @@
           <input type="number" id="trq_res" class="fixed-width-input" oninput="calcPowerFromTorque()">
           <select id="trq_res_unit" onchange="calcTorqueResult()">
             <option value="nm">Н·м</option>
-            <option value="kgcm">кгс·м</option>
+            <option value="kgfm">кгс·м</option>
             <option value="lbft">lb-ft</option>
           </select>
         </div>
@@ -423,6 +424,16 @@
           "gal": 0.0037854118,
           "ft³": 0.0283168466,
           "yd³": 0.76455486
+        }
+      },
+	  time: {
+        units: {
+          "мс": 0.001,
+          "с": 1,
+          "м": 60,
+		  "ч": 3600,
+		  "д": 86400,
+		  "нед": 604800,
         }
       },
       pressure: {
@@ -634,7 +645,7 @@
       else if (pUnit === 'w') pwr /= 1000;
       let nm = (pwr * 9549.3) / rpm;
       const unit = $('trq_res_unit').value;
-      let res = unit === 'nm' ? nm : unit === 'kgcm' ? nm / 9.80665 : nm * 0.737562;
+      let res = unit === 'nm' ? nm : unit === 'kgfm' ? nm / 9.80665 : nm * 0.737562;
       $('trq_res').value = formatNum(res, 1);
     }
 
@@ -643,7 +654,7 @@
         rpm = parseFloat($('trq_rpm').value),
         unit = $('trq_res_unit').value;
       if (!trq || !rpm) return;
-      let nm = unit === 'nm' ? trq : unit === 'kgcm' ? trq * 9.80665 : trq / 0.737562;
+      let nm = unit === 'nm' ? trq : unit === 'kgfm' ? trq * 9.80665 : trq / 0.737562;
       let kw = (nm * rpm) / 9549.3;
       const pUnit = $('trq_pwr_unit').value;
       let res = pUnit === 'hp' ? kw / 0.735499 : (pUnit === 'w' ? kw * 1000 : kw);
